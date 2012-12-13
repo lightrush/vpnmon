@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+#
+# VPN Monitor
+#
+# licensed under GNU General Public License version 2
+#
+
+import sys
+import traceback
+
+import gobject
+
+import dbus
+import dbus.decorators
+import dbus.mainloop.glib
+
+import os
+
+def print_usage():
+    print 'Usage: ' + sys.argv[0] + ' [COMMAND TO RUN WHEN DISCONNECTED]'
+
+def get_command():
+    if len(sys.argv) > 2:
+        print_usage()
+        sys.exit()
+
+    command = ''
+    if len(sys.argv) == 2:
+        command = sys.argv[1]
+
+    return command
+
+def disable_net():
+    print 'Disabling network...'
+    os.system('nmcli -p nm enable false')
+
+def enable_net():
+    print 'Enabling network...'
+    os.system('nmcli -p nm enable true')
+
+def run_command(command):
+    print 'Running command...'
+    os.system(command)     
+
+def catchall_signal_handler(*args, **kwargs):
+    #print ("Caught signal: " + kwargs['member'])
+
+    if args[0] >= 6: #vpn disconnect (6) or failure (7)
+        print 'VPN disconnected.'
+        command = get_command()
+        if command != '':
+            run_command(command)
+        else:
+            disable_net()
+            raw_input("Press Enter to enable your network...")
+            enable_net()
+
+if __name__ == '__main__':
+    get_command()
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    print ("Monitoring your VPN connection...")
+    bus = dbus.SystemBus()
+
+    #lets make a catchall
+    bus.add_signal_receiver(catchall_signal_handler, signal_name='VpnStateChanged', interface_keyword='dbus_interface', member_keyword='member')
+    
+    loop = gobject.MainLoop()
+    loop.run()
