@@ -35,10 +35,6 @@ def disable_net():
     print 'Disabling network...'
     os.system('nmcli -p nm enable false')
 
-def enable_net():
-    print 'Enabling network...'
-    os.system('nmcli -p nm enable true')
-
 def run_command(command):
     print 'Running command...'
     os.system(command)     
@@ -53,8 +49,6 @@ def catchall_signal_handler(*args, **kwargs):
             run_command(command)
         else:
             disable_net()
-            raw_input("Press Enter to enable your network...")
-            enable_net()
 
 if __name__ == '__main__':
     get_command()
