@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-#
-# VPN Monitor
+##########################################################
+# vpnmon
 #
 # licensed under GNU General Public License version 2
 #
@@ -16,20 +16,31 @@ import dbus.decorators
 import dbus.mainloop.glib
 
 import os
+import argparse
 
-def print_usage():
-    print 'Usage: ' + sys.argv[0] + ' [COMMAND TO RUN WHEN DISCONNECTED]'
+class CatchallSignalHandler(object):
+    """A functor that eliminates the need to access globals. Needed
+    since dbus won't allow us to pass our own parameters."""
+    
+    def __init__(self, command):
+        self.command = command
+        
+    def __call__(self, *args, **kwargs):
+        # VPN disconnect (6) or failure (7)
+        if args[0] >= 6: 
+            print 'VPN disconnected.'
+            if self.command is not None:
+                run_command(self.command)
+            else:
+                disable_net()  
 
-def get_command():
-    if len(sys.argv) > 2:
-        print_usage()
-        sys.exit()
-
-    command = ''
-    if len(sys.argv) == 2:
-        command = sys.argv[1]
-
-    return command
+def get_argparser():
+    parser = argparse.ArgumentParser(description='vpnmon - A VPN \
+                                     connection monitor for Linux')
+    parser.add_argument('--run-command', metavar='COMMAND', type=str,
+                        help='run COMMAND when VPN connection drops,\
+                        instead of disabling the network')
+    return parser
 
 def disable_net():
     print 'Disabling network...'
@@ -37,27 +48,27 @@ def disable_net():
 
 def run_command(command):
     print 'Running command...'
-    os.system(command)     
+    os.system(command)
+     
+def main():
+    # Take care of bad parameters and obtaining the command at once.
+    # If any errors occur in the args the program will terminate here.
+    command = get_argparser().parse_args().run_command
 
-def catchall_signal_handler(*args, **kwargs):
-    #print ("Caught signal: " + kwargs['member'])
-
-    if args[0] >= 6: #vpn disconnect (6) or failure (7)
-        print 'VPN disconnected.'
-        command = get_command()
-        if command != '':
-            run_command(command)
-        else:
-            disable_net()
-
-if __name__ == '__main__':
-    get_command()
+    catchall_signal_handler = CatchallSignalHandler(command)
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     print ("Monitoring your VPN connection...")
     bus = dbus.SystemBus()
-
-    #lets make a catchall
-    bus.add_signal_receiver(catchall_signal_handler, signal_name='VpnStateChanged', interface_keyword='dbus_interface', member_keyword='member')
-    
+    bus.add_signal_receiver(catchall_signal_handler,
+                            signal_name='VpnStateChanged',
+                            interface_keyword='dbus_interface',
+                            member_keyword='member')
     loop = gobject.MainLoop()
-    loop.run()
+    try:
+        loop.run()
+    except KeyboardInterrupt:
+        print 'Exiting...'
+        
+
+if __name__ == '__main__':
+    main()
