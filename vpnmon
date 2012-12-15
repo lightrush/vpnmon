@@ -2,7 +2,7 @@
 
 ################################################################
 #
-# vpnmon - A VPN connection monitor for Linux
+# vpnmon - A VPN connection monitor for Ubuntu
 #
 # Whenever your VPN connection disconnects, vpnmon disables your 
 # entire networking or runs a custom command of your choice.
@@ -28,6 +28,7 @@ import dbus.mainloop.glib
 
 import os
 import argparse
+import pynotify
 
 class CatchallSignalHandler(object):
     """A functor that eliminates the need to access globals. Needed
@@ -105,20 +106,19 @@ def main():
     try:
         loop.run()
     except KeyboardInterrupt:
-        print 'Exiting...'
+        print '\nExiting...'
         
 if __name__ == '__main__':
-    # Attempt to import pynotify. This is always available on Ubuntu,
-    # but may not be available on other distros.
-    pynotify_avail = False
-    try:
-        import pynotify
-        if pynotify.init ("vpnmon"):
-            pynotify_avail = True
-    except ImportError:
-        print 'Notification support not available. Install pynotify.'
+    # Attempt to init pynotify. Not sure why this could fail.
+    # Documentation is quite scarce on this module, but all
+    # examples quite if it returns false. Instead we do not
+    # show notifications.
+    pynotify_avail = pynotify.init ("vpnmon")
+    if not pynotify_avail:
+        print 'Notification support not available.'
 
     # Get the show_notification functor.
     show_notification = ShowNotification(pynotify_avail)
-    
+
+    # Run the main program.
     main()
