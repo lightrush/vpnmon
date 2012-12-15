@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Quit if anything goes bad.
+set -e
+
+INSTALL_DIR="$HOME/.local/share/vpnmon"
+EXECUTABLE='vpnmon'
+DESKTOP_FILE='vpnmon.desktop'
+AUTOSTART_DIR='.config/autostart'
+
+# Copy the executable
+if [ ! -f "./$EXECUTABLE" ]; then
+    echo 'Executable not found. Am I running from the right directory?'
+    exit 1
+fi
+
+# Make the install dir
+if [ -d "$INSTALL_DIR" ]; then
+    echo 'Install directory exists. Skipping creating it...'
+else
+    echo 'Creating install directory...'
+    mkdir -v $INSTALL_DIR
+fi
+
+# Copy the executable
+if [ -f "$INSTALL_DIR/$EXECUTABLE" ]; then
+    echo 'Exicutable exists. Saving a backup...'
+    mv -v "$INSTALL_DIR/$EXECUTABLE" "$INSTALL_DIR/$EXECUTABLE.old"
+fi
+
+echo 'Copying the executable...'
+cp -v "./$EXECUTABLE" "$INSTALL_DIR/$EXECUTABLE"
+
+# Add to startup
+cat > $DESKTOP_FILE <<'EOF'
+[Desktop Entry]
+Type=Application
+EOF
+echo "Exec=$INSTALL_DIR/$EXECUTABLE" >> $DESKTOP_FILE
+cat >> $DESKTOP_FILE <<'EOF'
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name[en_US]=vpnmon
+Name=vpnmon
+Comment[en_US]=
+Comment=
+EOF
+
+if [ -f "$HOME/$AUTOSTART_DIR/$DESKTOP_FILE" ]; then
+    echo 'Desktop file exists. Saving a backup...'
+    mv -v "$HOME/$AUTOSTART_DIR/$DESKTOP_FILE" "$HOME/$AUTOSTART_DIR/$DESKTOP_FILE.old"
+fi
+
+echo 'Copying the desktop file...'
+cp -v "./$DESKTOP_FILE" "$HOME/$AUTOSTART_DIR/$DESKTOP_FILE"
+
+
+
+
+
+
