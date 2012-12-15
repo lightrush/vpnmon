@@ -17,6 +17,10 @@ import sys
 import traceback
 
 import gobject
+gobject.threads_init()
+
+from dbus import glib
+glib.init_threads()
 
 import dbus
 import dbus.decorators
@@ -71,8 +75,12 @@ def run_command(command):
     print msg
     show_notification(msg)
     os.system(command)
-             
+
 def main():
+    # Workaround missing connections in nm-applet.
+    # Part 1
+    os.system('nmcli -p nm enable false')
+
     # Take care of bad parameters and obtaining the command at once.
     # If any errors occur in the args the program will terminate here.
     command = get_argparser().parse_args().run_command
@@ -88,6 +96,12 @@ def main():
                             interface_keyword='dbus_interface',
                             member_keyword='member')
     loop = gobject.MainLoop()
+
+    # Workaround missing connections in nm-applet.
+    # Part 2        
+    os.system('nmcli -p nm enable true')
+
+    show_notification('Starting...')
     try:
         loop.run()
     except KeyboardInterrupt:
