@@ -41,28 +41,45 @@ class CatchallSignalHandler(object):
             else:
                 disable_net()  
 
+class ShowNotification(object):
+    """A functor that eliminates the need to access globals."""
+    
+    def __init__(self, pynotify_avail):
+        self.pynotify_avail = pynotify_avail
+            
+    def __call__(self, message):
+        if self.pynotify_avail:
+            pynotify.Notification ("vpnmon", message).show()
+
 def get_argparser():
     parser = argparse.ArgumentParser(description='vpnmon - A VPN \
                                      connection monitor for Linux')
-    parser.add_argument('--run-command', metavar='COMMAND', type=str,
+    parser.add_argument('-r', '--run-command', metavar='COMMAND', type=str,
                         help='run COMMAND when VPN connection drops,\
                         instead of disabling the network')
     return parser
 
 def disable_net():
-    print 'Disabling network...'
+    msg = 'Disabling networking...'
+    print msg
+    show_notification(msg)
     os.system('nmcli -p nm enable false')
 
 def run_command(command):
-    print 'Running command...'
+    msg = 'Running command:\n' + \
+          '\"' + command + "\""
+    print msg
+    show_notification(msg)
     os.system(command)
-     
+             
 def main():
     # Take care of bad parameters and obtaining the command at once.
     # If any errors occur in the args the program will terminate here.
     command = get_argparser().parse_args().run_command
 
+    # Get the catchall_signal_handler functor.
     catchall_signal_handler = CatchallSignalHandler(command)
+    
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     print ("Monitoring your VPN connection...")
     bus = dbus.SystemBus()
@@ -76,6 +93,18 @@ def main():
     except KeyboardInterrupt:
         print 'Exiting...'
         
-
 if __name__ == '__main__':
+    # Attempt to import pynotify. This is always available on Ubuntu,
+    # but may not be available on other distros.
+    pynotify_avail = False
+    try:
+        import pynotify
+        if pynotify.init ("vpnmon"):
+            pynotify_avail = True
+    except ImportError:
+        print 'Notification support not available. Install pynotify.'
+
+    # Get the show_notification functor.
+    show_notification = ShowNotification(pynotify_avail)
+    
     main()
