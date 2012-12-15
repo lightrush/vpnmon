@@ -10,6 +10,11 @@ would fail to function.
 Licensed under GNU General Public License version 2
 
 
+DEPENDENCIES:
+1. NetworkManager
+2. (OPTIONAL) python-notify
+
+
 INSTALL:
 1. Extract to a writeable location.
 2. Run the "install" file.
