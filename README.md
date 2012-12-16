@@ -10,7 +10,8 @@ would fail to function.
 Licensed under GNU General Public License version 2
 
 
-DEPENDENCIES:
+Dependencies
+------------
 1. Ubuntu
 
 There isn't any sort of dependency checking mechanism at this 
@@ -25,7 +26,8 @@ vpnmon running on any Linux distribution having:
 5. pynotify
 
 
-INSTALL:
+Installation
+------------
 1. Extract the archive.
 2. Run the "install" file.
 3. Log out and then log in.
