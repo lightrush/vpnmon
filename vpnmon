@@ -52,10 +52,10 @@ class ShowNotification(object):
     def __init__(self, pynotify_avail):
         self.pynotify_avail = pynotify_avail
             
-    def __call__(self, message):
+    def __call__(self, message, icon):
         print message
         if self.pynotify_avail:
-            pynotify.Notification ("vpnmon", message).show()
+            pynotify.Notification ("vpnmon", message, icon).show()
 
 def get_argparser():
     parser = argparse.ArgumentParser(description='vpnmon - A VPN \
@@ -66,24 +66,24 @@ def get_argparser():
     return parser
 
 def disable_net():
-    show_notification('Disabling networking...')
+    show_notification('Disabling networking...', 'dialog-warning')
     os.system('nmcli -p nm enable false')
 
 def run_command(command):
     msg = 'Running command:\n' + \
           '\"' + command + "\""
-    show_notification(msg)
+    show_notification(msg, 'dialog-warning')
     os.system(command)
 
 def main():
+    # Take care of bad parameters and obtaining the command at once.
+    # If any errors occur in the args the program will terminate here.
+    command = get_argparser().parse_args().run_command    
+
     try:
         # Workaround missing connections in nm-applet.
         # Part 1
         os.system('nmcli -p nm enable false')
-
-        # Take care of bad parameters and obtaining the command at once.
-        # If any errors occur in the args the program will terminate here.
-        command = get_argparser().parse_args().run_command
 
         # Get the catchall_signal_handler functor.
         catchall_signal_handler = CatchallSignalHandler(command)
@@ -100,7 +100,7 @@ def main():
         # Part 2
         os.system('nmcli -p nm enable true')
 
-        show_notification('Monitoring your VPN connection...')
+        show_notification('Monitoring your VPN connection...', 'dialog-information')
         loop.run()
     except KeyboardInterrupt:
         print '\nExiting...'
@@ -110,7 +110,7 @@ def main():
         # sure we don't leave the user without monitoring
         # but with working connection, so we let them know
         # we crashed and disable the networking.
-        show_notification('Unexpected error occurred.')
+        show_notification('Unexpected error occurred.', 'dialog-error')
         disable_net()
         
 if __name__ == '__main__':
